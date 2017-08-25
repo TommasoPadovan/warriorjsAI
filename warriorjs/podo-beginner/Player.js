@@ -6,7 +6,7 @@ var health=20;
 var underAttack = false;
 
 var exploredBackwards = false;
-var direction = 'backward';
+var direction = 'forward';
 
 const State = {
 	noOp: 0,
@@ -37,7 +37,7 @@ class Player {
 
 			else {
 				if (warrior.feel(direction).isWall())
-					direction = 'forward'
+					warrior.pivot();
 				else
 					warrior.attack(direction)
 			}
