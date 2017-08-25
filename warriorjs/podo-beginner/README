@@ -1,0 +1,34 @@
+Level 7
+
+You feel a wall right in front of you and an opening behind you.
+
+Tip: You are not as effective at attacking backward. Use `warrior.feel().isWall()` and `warrior.pivot()` to turn around.
+
+
+╔══════╗
+║>a S @║
+╚══════╝
+
+  > = stairs
+  @ = podo
+  S = thickSludge
+
+
+Warrior abilities:
+
+  warrior.walk()
+
+  warrior.attack()
+
+  warrior.feel()
+
+  warrior.health()
+
+  warrior.rest()
+
+  warrior.rescue()
+
+  warrior.pivot() (NEW!)
+
+
+When you're done editing Player.js, run the warriorjs command again.
