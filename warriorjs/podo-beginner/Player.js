@@ -28,7 +28,6 @@ function oppositeDirection(direction) {
 class Player {
 
 	constructor() {
-		console.log('chiappine');
 
 		this.health = 20;
 		this.position = 0;
@@ -39,6 +38,7 @@ class Player {
 		}
 
 		this.firstTurn = true;
+		this.underRangedAttack = 0;
 	}
 
     /**
@@ -71,25 +71,39 @@ class Player {
 
 
     playTurn(warrior) {
-		if (this.firstTurn) {
-			this.firstTurn = false;
-			this.flip(warrior);
-			return;
-		}
 
 
         //keep track of the health variations
         const deltaHealth = warrior.health() - this.health;
         this.health = warrior.health();
 
+        /*if (deltaHealth < 0 &&
+        		!warrior.feel().isEnemy() &&
+				!warrior.feel('backward').isEnemy()) {
+        	this.underRangedAttack ++;
+		} else {
+        	this.underRangedAttack = 0;
+		}
+		if (this.underRangedAttack === 3) {
+        	this.flip(warrior);
+        	return;
+		}*/
+
+
         //update the model with the damage took in this turn
         if (!this.model[this.position]) this.model[this.position] = new MySpace();
         const newsMessage = this.model[this.position].damageTakenHere(deltaHealth * (-1));
-        console.log(newsMessage);
         if (newsMessage === 'enemyDead') this.removeEnemyFromFront();
 
         //update with the elements in sight
         const positions = Player.lookBothDirections(warrior);
+		if (this.firstTurn &&
+            positions[0] === 1 &&
+            positions[1] === 2) {
+			this.firstTurn = false;
+			this.flip(warrior);
+			return;
+		}
         const spaces = [
             warrior.look('forward')[positions[0]],
             warrior.look('backward')[positions[1]]
@@ -122,7 +136,8 @@ class Player {
 			if (warrior.health()<CRITIC_HEALTH) {
 				this.walkToRestToward(this.nearestSafePlace(), warrior);
 			} else {
-				if (Player.frontEnemyDistance(warrior)<=2)
+                if (warrior.feel().isCaptive()) warrior.rescue();
+				else if (Player.frontEnemyDistance(warrior)<=2)
 					warrior.shoot();
 				else
 					this.walk(warrior);
@@ -139,13 +154,18 @@ class Player {
 	}
 
 	walk(warrior, direction='forward') {
-		const front = this.front === 'forward' ? 1 : -1;
-		const dir = direction === 'forward' ? 1 : -1;
+		if (warrior.feel(direction).isWall())
+			this.flip(warrior);
+		else {
+            const front = this.front === 'forward' ? 1 : -1;
+            const dir = direction === 'forward' ? 1 : -1;
 
-		this.position += (front * dir);
+            this.position += (front * dir);
 
-		warrior.walk(direction);
+            warrior.walk(direction);
+        }
 	}
+
 
 	flip(warrior) {
 		this.front = this.front === 'forward' ? 'backward' : 'forward';
@@ -154,7 +174,6 @@ class Player {
 
     walkToRestToward(i, warrior) {
 		const currentPos = this.position;
-		//console.log([this.position, this.model[this.position].damage]);
 		if (i<0) this.walk(warrior, 'backward');
 		else if (i === 0) warrior.rest();
 		else this.walk(warrior);
@@ -168,7 +187,6 @@ class Player {
 			let i=1;
 			while(true) {
 				if (this.getSpace((-1) * i).damage === 0) {
-					console.log([(-1)*i, this.getSpace((-1)*i).damage]);
 					return (-1)*i;
                 }
 				if (this.getSpace(i).damage === 0) return i;
@@ -178,68 +196,14 @@ class Player {
 	}
 
     removeEnemyFromFront() {
-		console.log(this.model[-3]);
 		const front = this.front === 'forward' ? 1 : -1;
-		console.log([this.front, front]);
 		let i = 1;
 		while (this.getSpace(front*i).enemy===null && i<=3) i++;
 		if (i<=3) this.getSpace(front*i).empty();
-		console.log('enemy removed');
-        console.log(this.model[-3]);
     }
 
 
 }
-
-
-
-
-
-
-// if (health > warrior.health()) underAttack = true;
-// else underAttack = false;
-// health = warrior.health()
-//
-// if (!warrior.feel(direction).isEmpty()) {
-//
-//     if (warrior.feel(direction).isCaptive()) {
-//         warrior.rescue(direction);
-//     } else {
-//         if (warrior.feel(direction).isWall())
-//             warrior.pivot();
-//         else
-//             warrior.attack(direction)
-//     }
-//
-//
-// } else {
-//
-//     if (!warrior.look(direction)[1].isEmpty() && !warrior.look(direction)[2].isEmpty()) {
-//         if (warrior.health()>GOOD_HEALTH) {
-//             var spaces = warrior.look(direction);
-//             if (spaces[1].isEnemy() || (spaces[2].isEnemy() && spaces[1].isEmpty() ))
-//                 warrior.shoot();
-//             else
-//                 warrior.walk(direction);
-//         } else {
-//             if (underAttack) {
-//                 if (warrior.health() <= CRITIC_HEALTH)
-//                     warrior.walk(oppositeDirection(direction));			//run awaaaaay bwoy
-//                 else
-//                     warrior.walk(direction);
-//             }
-//             else
-//                 warrior.rest();
-//         }
-//
-//
-//     }
-//
-//     else {
-//         if (warrior.health() < MAX_HEALTH) warrior.rest();
-//         else warrior.walk();
-//     }
-// }
 
 
 
