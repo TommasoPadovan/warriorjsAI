@@ -33,6 +33,12 @@ class Player {
 		this.health = 20;
 		this.position = 0;
 		this.model = {};
+		this.front = 'forward';
+		for (let i=-100; i<101; i++) {
+			this.model[i] = new MySpace();
+		}
+
+		this.firstTurn = true;
 	}
 
     /**
@@ -48,7 +54,8 @@ class Player {
 	}
 
     static frontEnemyDistance(warrior) {
-		return warrior.look().findIndex(space => space.isEnemy())
+		let distance = warrior.look().findIndex(space => space.isEnemy());
+		return distance > 0 ? distance : 666;
 	}
 
 	static enemyInSight(warrior) {
@@ -64,13 +71,22 @@ class Player {
 
 
     playTurn(warrior) {
+		if (this.firstTurn) {
+			this.firstTurn = false;
+			this.flip(warrior);
+			return;
+		}
+
+
         //keep track of the health variations
         const deltaHealth = warrior.health() - this.health;
         this.health = warrior.health();
 
         //update the model with the damage took in this turn
         if (!this.model[this.position]) this.model[this.position] = new MySpace();
-        this.model[this.position].damageTakenHere(deltaHealth * (-1));
+        const newsMessage = this.model[this.position].damageTakenHere(deltaHealth * (-1));
+        console.log(newsMessage);
+        if (newsMessage === 'enemyDead') this.removeEnemyFromFront();
 
         //update with the elements in sight
         const positions = Player.lookBothDirections(warrior);
@@ -91,6 +107,7 @@ class Player {
                 //else if (spaces[i].isStair()) this.model[this.position+relativePositions[i]].stair();
             }
         }
+
 
 
 
@@ -122,30 +139,54 @@ class Player {
 	}
 
 	walk(warrior, direction='forward') {
-		if (direction === 'forward') this.position++;
-		else this.position--;
+		const front = this.front === 'forward' ? 1 : -1;
+		const dir = direction === 'forward' ? 1 : -1;
+
+		this.position += (front * dir);
 
 		warrior.walk(direction);
 	}
 
+	flip(warrior) {
+		this.front = this.front === 'forward' ? 'backward' : 'forward';
+		warrior.pivot();
+	}
+
     walkToRestToward(i, warrior) {
 		const currentPos = this.position;
-		if (currentPos>i) this.walk(warrior, 'backward');
-		else if (currentPos === i) warrior.rest();
+		//console.log([this.position, this.model[this.position].damage]);
+		if (i<0) this.walk(warrior, 'backward');
+		else if (i === 0) warrior.rest();
 		else this.walk(warrior);
 	}
 
     nearestSafePlace() {
-		if (this.getSpace().damage === 0) return 0;
+		if (this.getSpace().damage === 0) {
+			return 0;
+        }
 		else {
 			let i=1;
 			while(true) {
-				if (this.getSpace((-1) * i).damage === 0 || !this.getSpace((-1) * i)) return (-1)*i;
-				if (this.getSpace(i).damage === 0 || !this.getSpace(i)) return i;
+				if (this.getSpace((-1) * i).damage === 0) {
+					console.log([(-1)*i, this.getSpace((-1)*i).damage]);
+					return (-1)*i;
+                }
+				if (this.getSpace(i).damage === 0) return i;
 				i++;
 			}
 		}
 	}
+
+    removeEnemyFromFront() {
+		console.log(this.model[-3]);
+		const front = this.front === 'forward' ? 1 : -1;
+		console.log([this.front, front]);
+		let i = 1;
+		while (this.getSpace(front*i).enemy===null && i<=3) i++;
+		if (i<=3) this.getSpace(front*i).empty();
+		console.log('enemy removed');
+        console.log(this.model[-3]);
+    }
 
 
 }
@@ -216,7 +257,7 @@ class MySpace {
 
         if (oldDmg < this.damage) return 'enemyDiscover';
         else if (oldDmg > this.damage) return 'enemyDead';
-        else return 'noChange'
+        else return 'noChange';
     }
 
     empty() {
