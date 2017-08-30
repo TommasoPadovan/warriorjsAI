@@ -1,0 +1,44 @@
+Level 4
+
+Your ears become more in tune with the surroundings. Listen to find enemies and captives!
+
+Tip: Use `warrior.listen()` to find spaces with other units, and `warrior.directionOf()` to determine what direction they're in.
+
+
+╔════╗
+║C s ║
+║ @ S║
+║C s>║
+╚════╝
+
+  > = stairs
+  @ = podo
+  C = captive
+  s = sludge
+  S = thickSludge
+
+
+Warrior abilities:
+
+  warrior.directionOfStairs()
+
+  warrior.walk()
+
+  warrior.feel()
+
+  warrior.attack()
+
+  warrior.health()
+
+  warrior.rest()
+
+  warrior.bind()
+
+  warrior.rescue()
+
+  warrior.directionOf() (NEW!)
+
+  warrior.listen() (NEW!)
+
+
+When you're done editing Player.js, run the warriorjs command again.
