@@ -14,7 +14,17 @@ class Player {
 
         const enemyDirections = ['forward', 'left', 'right', 'backward'].map(direction => {
             if (warrior.feel(direction).isEnemy()) return {direction: direction, what: 'enemy'};
-            else if (warrior.feel(direction).isCaptive()) return {direction: direction, what: 'captive'};
+            else if (warrior.feel(direction).isCaptive()) {
+                console.log('found captive');
+                if (warrior.feel(direction).isTicking()) {
+                    // console.log('found something ticky');
+                    return {direction: direction, what: 'tickingCaptive'};
+                }
+                else {
+                    // console.log('captive is not ticking; thats my feeling: ' + warrior.feel(direction).isTicking() + ' ' + warrior.feel(direction).isCaptive().isTicking());
+                    return {direction: direction, what: 'captive'};
+                }
+            }
             else return {};
         });
 
@@ -25,7 +35,14 @@ class Player {
             }
             else this.restUntilMaxHealth(warrior);
         } else {
-            if (this.countEnemyMelee(enemyDirections)>1) {
+            if (this.hearTicking(warrior)) {
+                if (this.countTickingCaptiveMelee(enemyDirections)>0) {
+                    this.unbindATickingCaptive(enemyDirections, warrior);
+                } else {
+                    this.walkTowardsNextObjective(warrior);
+                }
+            }
+            else if (this.countEnemyMelee(enemyDirections)>1) {
                 this.bindAnEnemy(enemyDirections, warrior);
                 return;
             } else if (this.countEnemyMelee(enemyDirections) === 1){
@@ -76,6 +93,19 @@ class Player {
         return c;
     }
 
+    countTickingCaptiveMelee(enemyDirections) {
+        let c = 0;
+        enemyDirections.forEach(dir => {
+            if (dir.what === 'tickingCaptive') c++;
+        });
+        console.log(c);
+        return c;
+    }
+
+    unbindATickingCaptive(enemyDirections, warrior) {
+        warrior.rescue(enemyDirections.find(dir => dir.what === 'tickingCaptive').direction);
+    }
+
     unbindACaptive(enemyDirections, warrior) {
         warrior.rescue(enemyDirections.find(dir => dir.what === 'captive').direction);
     }
@@ -114,6 +144,7 @@ class Player {
     nextObjective(warrior) {
         const spaces = warrior.listen();
         const matchingFun = [
+            space => space.isTicking(),
             space => space.isEnemy(),
             space => space.isCaptive()
         ].find(fun => spaces.some(fun));
@@ -161,10 +192,15 @@ class Player {
     }
 
     canIGo(whereToGo, warrior) {
-        const truth = (!warrior.feel(whereToGo[0]).isStairs() || whereToGo[1] === 'stairs');
-        // console.log( warrior.feel(whereToGo[0]).apply(whereToGo[1]));
-        console.log(truth);
+        const truth = ((!warrior.feel(whereToGo[0]).isStairs() && warrior.feel(whereToGo[0]).isEmpty() && !warrior.feel(whereToGo[0]).isWall()) || whereToGo[1] === 'stairs');
         return truth;
     }
+
+    hearTicking(warrior) {
+        return warrior.listen().find(space => space.isTicking());
+    }
+
+
+
 }
 
