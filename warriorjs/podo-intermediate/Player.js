@@ -1,7 +1,7 @@
 class Player {
     constructor() {
         this.MAX_HEALT = 20;
-        this.CRIT_HEALTH = 10;
+        this.CRIT_HEALTH = 6;
         this.resting = false;
     }
 
@@ -84,28 +84,87 @@ class Player {
         warrior.walk(warrior.directionOfStairs());
     }
 
+    /**
+     * @todo flat that out
+     * @param warrior
+     */
     walkTowardsNextObjective(warrior) {
-        const direction = this.nextObjective(warrior);
-        console.log("will walk " + direction);
-        warrior.walk(direction);
+        const whereToGo = this.nextObjective(warrior);
+        if (this.canIGo(whereToGo, warrior))
+            warrior.walk(whereToGo[0]);
+        else {
+            const lateralMove = this.rndArrayElement(this.ortogonalDir(whereToGo[0]));
+            if (this.canIGo([lateralMove, whereToGo[1]], warrior)) {
+                warrior.walk(lateralMove);
+            } else {
+                const oppositeLateralMove = this.oppositeDir(lateralMove);
+                if (this.canIGo([oppositeLateralMove, whereToGo[1]], warrior)) {
+                    warrior.walk(oppositeLateralMove);
+                } else {
+                    const oppositeMove = this.oppositeDir(whereToGo[0]);
+                    if (this.canIGo([oppositeMove, whereToGo[1]], warrior))
+                        warrior.walk(oppositeMove);
+                }
+            }
+
+        }
     }
+
 
     nextObjective(warrior) {
         const spaces = warrior.listen();
-        let dir = undefined;
-        [
+        const matchingFun = [
             space => space.isEnemy(),
             space => space.isCaptive()
-        ].forEach(fun => {
-            if (spaces.some(fun)) {
-                dir = warrior.directionOf(spaces.find(fun));
-            }
-        });
+        ].find(fun => spaces.some(fun));
 
-        if (!dir) dir = warrior.directionOfStairs();
-        return dir;
+        if (matchingFun) return [warrior.directionOf(spaces.find(matchingFun)), 'noStairs'];
+        else return [warrior.directionOfStairs(), 'stairs'];
+    }
 
 
+
+    oppositeDir(dir) {
+        switch (dir) {
+            case 'forward':
+                return 'backward';
+            case 'backward':
+                return 'forward';
+            case 'left':
+                return 'right';
+            case 'right':
+                return 'left';
+            default:
+                return undefined;
+        }
+    }
+
+    ortogonalDir(dir) {
+        const lr = ['left', 'right'];
+        const fb = ['forward', 'backward'];
+        switch (dir) {
+            case 'forward':
+                return lr;
+            case 'backward':
+                return lr;
+            case 'left':
+                return fb;
+            case 'right':
+                return fb;
+            default:
+                return undefined;
+        }
+    }
+
+    rndArrayElement(items) {
+        return items[Math.floor(Math.random()*items.length)]
+    }
+
+    canIGo(whereToGo, warrior) {
+        const truth = (!warrior.feel(whereToGo[0]).isStairs() || whereToGo[1] === 'stairs');
+        // console.log( warrior.feel(whereToGo[0]).apply(whereToGo[1]));
+        console.log(truth);
+        return truth;
     }
 }
 
