@@ -35,7 +35,8 @@ class Player {
                 this.unbindACaptive(enemyDirections, warrior);
                 return;
             } else {
-                this.walkTowardsStairs(warrior);
+                this.walkTowardsNextObjective(warrior);
+                return;
             }
         }
 
@@ -81,6 +82,30 @@ class Player {
 
     walkTowardsStairs(warrior) {
         warrior.walk(warrior.directionOfStairs());
+    }
+
+    walkTowardsNextObjective(warrior) {
+        const direction = this.nextObjective(warrior);
+        console.log("will walk " + direction);
+        warrior.walk(direction);
+    }
+
+    nextObjective(warrior) {
+        const spaces = warrior.listen();
+        let dir = undefined;
+        [
+            space => space.isEnemy(),
+            space => space.isCaptive()
+        ].forEach(fun => {
+            if (spaces.some(fun)) {
+                dir = warrior.directionOf(spaces.find(fun));
+            }
+        });
+
+        if (!dir) dir = warrior.directionOfStairs();
+        return dir;
+
+
     }
 }
 
