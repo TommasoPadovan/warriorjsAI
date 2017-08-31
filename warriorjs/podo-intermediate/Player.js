@@ -15,13 +15,10 @@ class Player {
         const enemyDirections = ['forward', 'left', 'right', 'backward'].map(direction => {
             if (warrior.feel(direction).isEnemy()) return {direction: direction, what: 'enemy'};
             else if (warrior.feel(direction).isCaptive()) {
-                console.log('found captive');
                 if (warrior.feel(direction).isTicking()) {
-                    // console.log('found something ticky');
                     return {direction: direction, what: 'tickingCaptive'};
                 }
                 else {
-                    // console.log('captive is not ticking; thats my feeling: ' + warrior.feel(direction).isTicking() + ' ' + warrior.feel(direction).isCaptive().isTicking());
                     return {direction: direction, what: 'captive'};
                 }
             }
@@ -98,7 +95,6 @@ class Player {
         enemyDirections.forEach(dir => {
             if (dir.what === 'tickingCaptive') c++;
         });
-        console.log(c);
         return c;
     }
 
@@ -120,24 +116,23 @@ class Player {
      */
     walkTowardsNextObjective(warrior) {
         const whereToGo = this.nextObjective(warrior);
-        if (this.canIGo(whereToGo, warrior))
-            warrior.walk(whereToGo[0]);
-        else {
-            const lateralMove = this.rndArrayElement(this.ortogonalDir(whereToGo[0]));
-            if (this.canIGo([lateralMove, whereToGo[1]], warrior)) {
-                warrior.walk(lateralMove);
-            } else {
-                const oppositeLateralMove = this.oppositeDir(lateralMove);
-                if (this.canIGo([oppositeLateralMove, whereToGo[1]], warrior)) {
-                    warrior.walk(oppositeLateralMove);
-                } else {
-                    const oppositeMove = this.oppositeDir(whereToGo[0]);
-                    if (this.canIGo([oppositeMove, whereToGo[1]], warrior))
-                        warrior.walk(oppositeMove);
-                }
-            }
+        const move = whereToGo[0];
+        const lateralMove = this.rndArrayElement(this.ortogonalDir(move));
+        const goal = whereToGo[1];
 
+        const validMove = [
+            move,
+            lateralMove,
+            this.oppositeDir(lateralMove)
+        ].find(m => this.canIGo(m, goal, warrior));
+
+        if (validMove) {
+            warrior.walk(move);
         }
+        else {
+            this.rushForward(move, warrior);
+        }
+
     }
 
 
@@ -191,8 +186,8 @@ class Player {
         return items[Math.floor(Math.random()*items.length)]
     }
 
-    canIGo(whereToGo, warrior) {
-        const truth = ((!warrior.feel(whereToGo[0]).isStairs() && warrior.feel(whereToGo[0]).isEmpty() && !warrior.feel(whereToGo[0]).isWall()) || whereToGo[1] === 'stairs');
+    canIGo(move, goal, warrior) {
+        const truth = ((!warrior.feel(move).isStairs() && warrior.feel(move).isEmpty() && !warrior.feel(move).isWall()) || goal === 'stairs');
         return truth;
     }
 
@@ -201,6 +196,14 @@ class Player {
     }
 
 
-
+    rushForward(move, warrior) {
+        if (warrior.feel(move).isEnemy())
+            warrior.attack(move);
+        else if (warrior.feel().isCaptive())
+            warrior.rescue(move);
+        else {
+            warrior.walk(this.oppositeDir(move));
+        }
+    }
 }
 
