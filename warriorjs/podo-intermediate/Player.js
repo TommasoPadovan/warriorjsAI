@@ -1,16 +1,29 @@
 class Player {
     constructor() {
-        this.MAX_HEALT = 20;
+        this.MAX_HEALTH = 20;
+        this.DECENT_HEALTH = 14;
         this.CRIT_HEALTH = 6;
+        this.TOO_MUCH_TICKING = 6;
         this.resting = false;
+        this.tickingCount = 0;
     }
 
     playTurn(warrior) {
-        if (this.resting) {
-            warrior.rest();
-            if (warrior.health() >= this.MAX_HEALT) this.resting = false;
+        if (this.hearTicking(warrior)) this.tickingCount ++;
+        else this.tickingCount = 0;
+        if (this.tickingCount >= this.TOO_MUCH_TICKING) {
+            this.walkTowardsNextObjective(warrior);
             return;
         }
+
+
+        if (this.resting) {
+            warrior.rest();
+            if (warrior.health() >= this.DECENT_HEALTH && this.hearTicking(warrior)) this.resting = false;
+            if (warrior.health() >= this.MAX_HEALTH - 1) this.resting = false;
+            return;
+        }
+
 
         const enemyDirections = ['forward', 'left', 'right', 'backward'].map(direction => {
             if (warrior.feel(direction).isEnemy()) return {direction: direction, what: 'enemy'};
@@ -56,14 +69,24 @@ class Player {
 
         // if (enemyDirection) warrior.attack(enemyDirection);
         // else {
-        //     if (warrior.health() < this.MAX_HEALT) warrior.rest();
+        //     if (warrior.health() < this.MAX_HEALTH) warrior.rest();
         //     else warrior.walk(warrior.directionOfStairs());
         // }
     }
 
     restUntilMaxHealth(warrior) {
-        warrior.rest();
-        this.resting = true;
+        if (this.stillEnemiesOrCaptivesAlive(warrior)) {
+            warrior.rest();
+            this.resting = true;
+        } else {
+            this.walkTowardsNextObjective(warrior);
+        }
+    }
+
+    stillEnemiesOrCaptivesAlive(warrior) {
+        const alivePeople = warrior.listen().filter(space => space.isEnemy() || space.isCaptive());
+        console.log(alivePeople);
+        return alivePeople.length > 0
     }
 
     countEnemyMelee(enemyDirections) {
@@ -79,7 +102,14 @@ class Player {
     }
 
     attackAnEnemy(enemyDirections, warrior) {
-        warrior.attack(enemyDirections.find(dir => dir.what === 'enemy').direction);
+        const dir = enemyDirections.find(dir => dir.what === 'enemy').direction;
+        this.attack(dir, warrior);
+    }
+
+    attack(dir, warrior) {
+        const frontalEnemies = warrior.look(dir).filter(space => space.isEnemy()).length;
+        if (frontalEnemies >= 2) warrior.detonate(dir);
+        else warrior.attack(dir);
     }
 
     countCaptiveMelee(enemyDirections) {
@@ -110,6 +140,7 @@ class Player {
         warrior.walk(warrior.directionOfStairs());
     }
 
+
     /**
      * @todo flat that out
      * @param warrior
@@ -136,6 +167,7 @@ class Player {
     }
 
 
+
     nextObjective(warrior) {
         const spaces = warrior.listen();
         const matchingFun = [
@@ -147,8 +179,6 @@ class Player {
         if (matchingFun) return [warrior.directionOf(spaces.find(matchingFun)), 'noStairs'];
         else return [warrior.directionOfStairs(), 'stairs'];
     }
-
-
 
     oppositeDir(dir) {
         switch (dir) {
@@ -191,14 +221,14 @@ class Player {
         return truth;
     }
 
+
     hearTicking(warrior) {
         return warrior.listen().find(space => space.isTicking());
     }
 
-
     rushForward(move, warrior) {
         if (warrior.feel(move).isEnemy())
-            warrior.attack(move);
+            this.attack(move, warrior);
         else if (warrior.feel().isCaptive())
             warrior.rescue(move);
         else {
