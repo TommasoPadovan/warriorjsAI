@@ -1,0 +1,14 @@
+ACTIONS
+attackMelee:            5dmg
+attackMeleeBackwards:   3dmg
+attackRanged:           3dmg
+attackRangedBackwards:  3dmg
+
+
+ENEMIES
+sludge:
+    health  12hp
+    dmg     3
+thickSludge:
+    health  24hp
+    dmg
