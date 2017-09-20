@@ -6,9 +6,19 @@ attackRangedBackwards:  3dmg
 
 
 ENEMIES
-sludge:
-    health  12hp
-    dmg     3
-thickSludge:
-    health  24hp
-    dmg
+sludge: {
+    health:  12
+    dmg:     3
+}
+thickSludge: {
+    health:  24
+    dmg:     3
+}
+archer: {
+    health:  7
+    dmg:     3
+}
+wizard: {
+    health: 1
+    dmg:    11
+}
